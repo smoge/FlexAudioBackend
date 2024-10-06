@@ -1,6 +1,7 @@
 # FlexAudioBackend
 
-FlexAudioBackend is an experimental project.
+FlexAudioBackend is an experimental project. It's just for learning audio systems and software design in Linux. It does not offer anything "new".
+ 
 The goal is to explore the possibility of creating audio applications that can work with both JACK and PipeWire without changing the core application logic.
 
 ## Current Status
