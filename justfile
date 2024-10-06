@@ -32,7 +32,7 @@ run-jack: build
 # Recipe for formatting code using clang-format
 format:
     @echo "Formatting source files..."
-    clang-format -i src/*.cpp include/*.h
+    clang-format -i src/*.cpp include/*.h examples/*/*.cpp
 
 # Show help information
 help:

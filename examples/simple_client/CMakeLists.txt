@@ -13,5 +13,5 @@ target_link_libraries(simple_client PRIVATE audio_backend)
 
 # Include directories necessary for simple_client
 target_include_directories(simple_client PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include   # Adjust this path as necessary
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../include   
 )
