@@ -1,12 +1,24 @@
 #include "pipewire_backend.h"
+#include <iostream>
 #include <spa/param/audio/format-utils.h>
+#include <spa/param/props.h>
 #include <stdexcept>
 
-PipeWireBackend::PipeWireBackend() : loop_(nullptr), stream_(nullptr) { pw_init(nullptr, nullptr); }
+PipeWireBackend::PipeWireBackend() : loop_(nullptr), stream_(nullptr) {
+    pw_init(nullptr, nullptr);
+    memset(&stream_events_, 0, sizeof(stream_events_));
+    setup_stream_events();
+}
 
 PipeWireBackend::~PipeWireBackend() {
     shutdown();
     pw_deinit();
+}
+
+void PipeWireBackend::setup_stream_events() {
+    stream_events_.version = PW_VERSION_STREAM_EVENTS;
+    stream_events_.process = &PipeWireBackend::on_process;
+    stream_events_.state_changed = &PipeWireBackend::on_stream_state_changed;
 }
 
 bool PipeWireBackend::initialize(const std::string& client_name, const AudioFormat& format) {
@@ -16,17 +28,13 @@ bool PipeWireBackend::initialize(const std::string& client_name, const AudioForm
         return false;
     }
 
-    pw_properties* props = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY,
-                                             "Capture", PW_KEY_MEDIA_ROLE, "Music", PW_KEY_APP_NAME,
-                                             client_name.c_str(), nullptr);
-
-    if (!props) {
-        error_message_ = "Failed to create PipeWire properties";
-        return false;
-    }
+    pw_properties* props = pw_properties_new(
+        PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Capture", PW_KEY_MEDIA_ROLE, "Music",
+        PW_KEY_APP_NAME, client_name.c_str(), PW_KEY_NODE_NAME, client_name.c_str(),
+        PW_KEY_NODE_DESCRIPTION, "Audio Capture Client", nullptr);
 
     stream_ = pw_stream_new_simple(pw_main_loop_get_loop(loop_), client_name.c_str(), props,
-                                   &stream_events, this);
+                                   &stream_events_, this);
 
     if (stream_ == nullptr) {
         error_message_ = "Failed to create PipeWire stream";
@@ -72,10 +80,19 @@ bool PipeWireBackend::activate() {
 
     params[0] = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &info);
 
-    return (pw_stream_connect(stream_, PW_DIRECTION_INPUT, PW_ID_ANY,
-                              static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT |
-                                                           PW_STREAM_FLAG_MAP_BUFFERS),
-                              params, 1) == 0);
+    if (pw_stream_connect(stream_, PW_DIRECTION_INPUT, PW_ID_ANY,
+                          static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT |
+                                                       PW_STREAM_FLAG_MAP_BUFFERS |
+                                                       PW_STREAM_FLAG_RT_PROCESS),
+                          params, 1) != 0) {
+        error_message_ = "Failed to connect PipeWire stream";
+        return false;
+    }
+
+    // Start the main loop
+    pw_main_loop_run(loop_);
+
+    return true;
 }
 
 bool PipeWireBackend::deactivate() {
@@ -83,6 +100,7 @@ bool PipeWireBackend::deactivate() {
         error_message_ = "PipeWire stream not initialized";
         return false;
     }
+    pw_main_loop_quit(loop_);
     return (pw_stream_disconnect(stream_) == 0);
 }
 
@@ -118,51 +136,37 @@ bool PipeWireBackend::set_buffer_size(size_t size) {
 
 std::string PipeWireBackend::get_error_message() const { return error_message_; }
 
-void PipeWireBackend::on_process(void* userdata, struct pw_buffer* buffer) {
-    // Cast userdata to PipeWireBackend
+void PipeWireBackend::on_process(void* userdata) {
     auto* backend = static_cast<PipeWireBackend*>(userdata);
-
-    // Verify that the buffer is not null before proceeding
-    if (buffer == nullptr)
+    if (!backend)
         return;
 
-    // Access the spa_buffer within the pw_buffer
+    pw_buffer* buffer = pw_stream_dequeue_buffer(backend->stream_);
+    if (!buffer)
+        return;
+
     struct spa_buffer* buf = buffer->buffer;
-
-    // Retrieve data from the buffer
-    void* data = buf->datas[0].data;
-    if (data == nullptr)
+    if (!buf)
         return;
 
-    // Determine the number of frames in the buffer
-    size_t n_frames = buf->datas[0].chunk->size / sizeof(float);
+    void* data = buf->datas[0].data;
+    if (!data)
+        return;
 
-    // Call the process callback if it is set
+    size_t n_frames = buf->datas[0].chunk->size / sizeof(float);
     if (backend->process_callback_) {
         backend->process_callback_(static_cast<const float*>(data), n_frames);
     }
 
-    // Queue the buffer back onto the stream
     pw_stream_queue_buffer(backend->stream_, buffer);
 }
 
 void PipeWireBackend::on_stream_state_changed(void* userdata, pw_stream_state old_state,
                                               pw_stream_state state, const char* error) {
     auto* backend = static_cast<PipeWireBackend*>(userdata);
+    std::cout << "PipeWire stream state changed: " << pw_stream_state_as_string(state) << std::endl;
     if (state == PW_STREAM_STATE_ERROR) {
         backend->error_message_ = error ? error : "Unknown PipeWire stream error";
+        pw_main_loop_quit(backend->loop_);
     }
 }
-
-const pw_stream_events PipeWireBackend::stream_events = {
-    PW_VERSION_STREAM_EVENTS,
-    nullptr,                                   // destroy
-    &PipeWireBackend::on_stream_state_changed, // state_changed
-    nullptr,                                   // control_info
-    nullptr,                                   // io_changed
-    nullptr,                                   // param_changed
-    &PipeWireBackend::on_process,              // process
-    nullptr,                                   // drained
-    nullptr,                                   // command
-    nullptr,                                   // trigger_done
-};

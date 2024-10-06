@@ -19,21 +19,26 @@ clean:
     @echo "Cleaning build directory..."
     rm -rf {{build-dir}}
 
-# Recipe for running the example client
-run: build
+# Recipe for running the example client pipewire backend
+run-pipewire: build
     @echo "Running project..."
-    ./{{build-dir}}/examples/simple_client/simple_client
+    ./{{build-dir}}/examples/simple_client/simple_client pipewire
+
+# Recipe for running the example client jack backend
+run-jack: build
+    @echo "Running project..."
+    ./{{build-dir}}/examples/simple_client/simple_client jack
 
 # Recipe for formatting code using clang-format
 format:
     @echo "Formatting source files..."
     clang-format -i src/*.cpp include/*.h
 
-# # Show help information
-# help:
-#     @echo "Available commands:"
-#     @echo "  just configure - Configure the project with CMake"
-#     @echo "  just build     - Build the project"
-#     @echo "  just clean     - Clean build artifacts"
-#     @echo "  just run       - Run the project"
-#     @echo "  just format    - Format source code"
+# Show help information
+help:
+    @echo "Available commands:"
+    @echo "  just configure - Configure the project with CMake"
+    @echo "  just build     - Build the project"
+    @echo "  just clean     - Clean build artifacts"
+    @echo "  just run       - Run the project"
+    @echo "  just format    - Format source code"

@@ -32,11 +32,13 @@ private:
     AudioFormat current_format_;
     std::string error_message_;
 
-    static void on_process(void* userdata, struct pw_buffer* buffer);
+    pw_stream_events stream_events_;
+
+    void setup_stream_events();
+
+    static void on_process(void* userdata);
     static void on_stream_state_changed(void* userdata, pw_stream_state old_state,
                                         pw_stream_state state, const char* error);
-
-    static const pw_stream_events stream_events;
 };
 
 #endif // PIPEWIRE_BACKEND_H
