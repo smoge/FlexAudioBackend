@@ -37,8 +37,6 @@ format:
 # Show help information
 help:
     @echo "Available commands:"
-    @echo "  just configure - Configure the project with CMake"
     @echo "  just build     - Build the project"
     @echo "  just clean     - Clean build artifacts"
-    @echo "  just run       - Run the project"
     @echo "  just format    - Format source code"
