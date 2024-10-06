@@ -17,7 +17,7 @@ This project is in its early experimental stages. It is not ready for production
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/FlexAudioBackend.git
+   git clone https://github.com/smoge/FlexAudioBackend.git
    cd FlexAudioBackend
    ```
 
@@ -44,14 +44,3 @@ To run the example client:
 ./examples/simple_client jack     # For JACK backend
 ./examples/simple_client pipewire # For PipeWire backend
 ```
-
-## Current Limitations (a lot of them)
-
-- Only supports basic audio capture; playback is not implemented
-- Limited to a single audio input stream
-- Does not support advanced features like MIDI or complex routing
-- Error handling is basic and may not cover all edge cases
-- Performance has not been optimized and may not be suitable for low-latency applications
-- Thread safety has not been thoroughly tested
-- API is unstable and likely to change
-
