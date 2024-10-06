@@ -109,7 +109,7 @@ AudioBackend::AudioFormat PipeWireBackend::get_current_audio_format() const {
 }
 
 std::vector<AudioBackend::AudioFormat> PipeWireBackend::get_supported_formats() const {
-    // This is a simplification. In reality, you'd query PipeWire for supported formats.
+    //! This is a simplification. TODO query PipeWire for supported formats.
     return {{44100, 1, AudioFormat::SampleFormat::Float32},
             {48000, 1, AudioFormat::SampleFormat::Float32},
             {96000, 1, AudioFormat::SampleFormat::Float32}};
@@ -117,19 +117,19 @@ std::vector<AudioBackend::AudioFormat> PipeWireBackend::get_supported_formats() 
 
 float PipeWireBackend::get_cpu_load() const {
     // PipeWire doesn't have a direct equivalent to JACK's CPU load.
-    // You might need to implement your own CPU load calculation here.
+    //! need to implement your own CPU load calculation here.
     return 0.0f;
 }
 
 size_t PipeWireBackend::get_buffer_size() const {
     // This would typically be set during stream connection
-    // For now, we'll return a default value
+    // For now, just return a default value
     return 1024;
 }
 
 bool PipeWireBackend::set_buffer_size(size_t size) {
-    // Changing buffer size for an active PipeWire stream is not straightforward
-    // You might need to reconnect the stream with new parameters
+    // Changing buffer size for an active PipeWire stream is not simple task
+    // TODO: need to reconnect the stream with new parameters
     error_message_ = "Changing buffer size not implemented for PipeWire backend";
     return false;
 }
