@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.12)
 project(AudioBackendProject VERSION 1.0.0 LANGUAGES CXX)
 
+
+
+
 # C++ standard configuration
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Default build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -13,6 +18,8 @@ endif()
 # Options
 option(BUILD_EXAMPLES "Build example projects" ON)
 option(BUILD_TESTS "Build test projects" OFF)
+
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
